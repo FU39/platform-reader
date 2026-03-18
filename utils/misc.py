@@ -11,6 +11,7 @@ import requests
 BASE_URL = "http://117.78.40.159:50030"
 
 # 接口路径
+ATTR_LIST_ENDPOINT = "/admin-api/dt/seb-device-base/attr_list"
 SINGLE_PARAM_ENDPOINT = "/admin-api/de/querySingleParam"
 TIME_SERIES_ENDPOINT = "/admin-api/de/queryTimeSeriesParam"
 

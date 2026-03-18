@@ -21,6 +21,7 @@ platform-reader/
 │  ├─ data_read.py            # payload 构造、接口请求、DataFrame 组装
 │  └─ misc.py                 # 常量、数据模型、规格加载与参数归一化
 ├─ main.py                    # 主入口，按 type 分组查询并分文件导出
+├─ get_specs.py               # 设备属性抓取与 time_series 规格自动写入
 ├─ timestamp_handler.py       # 交互输入时间并写入 config/config.json 的 series_options
 ├─ test_data_read.py
 ├─ requirements.txt
@@ -145,4 +146,28 @@ python .\timestamp_handler.py --print-only
 
 ```powershell
 python .\timestamp_handler.py --config-path .\config\config.json
+```
+
+## 规格生成工具（`get_specs.py`）
+
+`get_specs.py` 用于批量拉取设备属性列表，并把可查询字段自动合并到 `database/query_specs.json` 的 `time_series` 下。
+
+- 输入：脚本中的 `device_id` 列表（可选 `TOKEN`）
+- 输出 1：`database/<deviceId>_attr_list.json`（原始属性列表）
+- 输出 2：更新 `database/query_specs.json` 的 `time_series` 映射
+
+映射规则：
+
+- 条目名：`deviceNameZh-attr`（例如：`新电锅炉2025-supplyTemperature`）
+- 字段映射：`id -> key`，`deviceId -> deviceID`，`deviceName -> deviceType`，`attr -> attr`
+
+说明：
+
+- 仅更新 `time_series`，不会覆盖 `single`
+- 若条目名重复，会用最新抓取结果覆盖同名项
+
+运行方式：
+
+```powershell
+python .\get_specs.py
 ```

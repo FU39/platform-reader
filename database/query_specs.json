@@ -12,7 +12,7 @@
             "deviceType": "economic_evaluation",
             "attr": "economic_evaluation"
         }
-},
+    },
     "time_series": {
         "test_001": {
             "key": "1823627608543428609",
@@ -26,11 +26,221 @@
             "deviceType": "economic_evaluation",
             "attr": "economic_evaluation"
         },
+        "ghm测试虚拟下发-virtualTemp1": {
+            "key": "2022141377097879554",
+            "deviceID": "401o40mrpek4400",
+            "deviceType": "ghmxieru",
+            "attr": "virtualTemp1"
+        },
+        "ghm测试虚拟下发-Virtual_pressure": {
+            "key": "2022141377097879555",
+            "deviceID": "401o40mrpek4400",
+            "deviceType": "ghmxieru",
+            "attr": "Virtual_pressure"
+        },
+        "ghm测试虚拟下发-state": {
+            "key": "2027631946771320834",
+            "deviceID": "401o40mrpek4400",
+            "deviceType": "ghmxieru",
+            "attr": "state"
+        },
+        "ghm测试虚拟下发-meiju": {
+            "key": "2027631946771320835",
+            "deviceID": "401o40mrpek4400",
+            "deviceType": "ghmxieru",
+            "attr": "meiju"
+        },
+        "ghm测试虚拟下发-temp2": {
+            "key": "2032389732209172481",
+            "deviceID": "401o40mrpek4400",
+            "deviceType": "ghmxieru",
+            "attr": "temp2"
+        },
+        "电锅炉-3-HeatProductionperHour": {
+            "key": "1945379954920828929",
+            "deviceID": "101lvr0oamo4400",
+            "deviceType": "ElectricBoilerBoiler3",
+            "attr": "HeatProductionperHour"
+        },
+        "电锅炉-3-Power": {
+            "key": "1945379954920828930",
+            "deviceID": "101lvr0oamo4400",
+            "deviceType": "ElectricBoilerBoiler3",
+            "attr": "Power"
+        },
+        "电锅炉-3-ReturnWaterTemp": {
+            "key": "1945379954920828931",
+            "deviceID": "101lvr0oamo4400",
+            "deviceType": "ElectricBoilerBoiler3",
+            "attr": "ReturnWaterTemp"
+        },
+        "电锅炉-3-MediumWaterTemp": {
+            "key": "1945379954920828932",
+            "deviceID": "101lvr0oamo4400",
+            "deviceType": "ElectricBoilerBoiler3",
+            "attr": "MediumWaterTemp"
+        },
+        "电锅炉-3-Status": {
+            "key": "1945379954920828933",
+            "deviceID": "101lvr0oamo4400",
+            "deviceType": "ElectricBoilerBoiler3",
+            "attr": "Status"
+        },
+        "电锅炉-3-FaultStatus": {
+            "key": "1945379954920828934",
+            "deviceID": "101lvr0oamo4400",
+            "deviceType": "ElectricBoilerBoiler3",
+            "attr": "FaultStatus"
+        },
+        "电锅炉-3-SupplyWaterTemp": {
+            "key": "1945379954920828935",
+            "deviceID": "101lvr0oamo4400",
+            "deviceType": "ElectricBoilerBoiler3",
+            "attr": "SupplyWaterTemp"
+        },
+        "电锅炉-3-Control": {
+            "key": "1945379954920828936",
+            "deviceID": "101lvr0oamo4400",
+            "deviceType": "ElectricBoilerBoiler3",
+            "attr": "Control"
+        },
+        "电锅炉-3-SoftFaultStatus": {
+            "key": "1945379954920828937",
+            "deviceID": "101lvr0oamo4400",
+            "deviceType": "ElectricBoilerBoiler3",
+            "attr": "SoftFaultStatus"
+        },
+        "电锅炉-3-SoftFaultReset": {
+            "key": "1945379954920828938",
+            "deviceID": "101lvr0oamo4400",
+            "deviceType": "ElectricBoilerBoiler3",
+            "attr": "SoftFaultReset"
+        },
+        "新电锅炉2025-remoteControlTargetSetting": {
+            "key": "1966069131939852289",
+            "deviceID": "101mi71ei0o4400",
+            "deviceType": "newBoiler2025",
+            "attr": "remoteControlTargetSetting"
+        },
+        "新电锅炉2025-remoteLoadSetting": {
+            "key": "1966069132271202305",
+            "deviceID": "101mi71ei0o4400",
+            "deviceType": "newBoiler2025",
+            "attr": "remoteLoadSetting"
+        },
+        "新电锅炉2025-remoteControl": {
+            "key": "1966069132271202306",
+            "deviceID": "101mi71ei0o4400",
+            "deviceType": "newBoiler2025",
+            "attr": "remoteControl"
+        },
+        "新电锅炉2025-mediumProtectionTemperature": {
+            "key": "1966069132271202307",
+            "deviceID": "101mi71ei0o4400",
+            "deviceType": "newBoiler2025",
+            "attr": "mediumProtectionTemperature"
+        },
+        "新电锅炉2025-heatingProtectionTemperature": {
+            "key": "1966069132271202308",
+            "deviceID": "101mi71ei0o4400",
+            "deviceType": "newBoiler2025",
+            "attr": "heatingProtectionTemperature"
+        },
+        "新电锅炉2025-mediumProtectionPressure": {
+            "key": "1966069132271202309",
+            "deviceID": "101mi71ei0o4400",
+            "deviceType": "newBoiler2025",
+            "attr": "mediumProtectionPressure"
+        },
+        "新电锅炉2025-switchTargetTemperature": {
+            "key": "1966069132271202310",
+            "deviceID": "101mi71ei0o4400",
+            "deviceType": "newBoiler2025",
+            "attr": "switchTargetTemperature"
+        },
+        "新电锅炉2025-mode": {
+            "key": "1966069132271202311",
+            "deviceID": "101mi71ei0o4400",
+            "deviceType": "newBoiler2025",
+            "attr": "mode"
+        },
+        "新电锅炉2025-mediumTemperature": {
+            "key": "1966069132271202312",
+            "deviceID": "101mi71ei0o4400",
+            "deviceType": "newBoiler2025",
+            "attr": "mediumTemperature"
+        },
         "新电锅炉2025-supplyTemperature": {
             "key": "1966069132271202313",
             "deviceID": "101mi71ei0o4400",
             "deviceType": "newBoiler2025",
             "attr": "supplyTemperature"
+        },
+        "新电锅炉2025-returnTemperature": {
+            "key": "1966069132271202314",
+            "deviceID": "101mi71ei0o4400",
+            "deviceType": "newBoiler2025",
+            "attr": "returnTemperature"
+        },
+        "新电锅炉2025-mediumPressure": {
+            "key": "1966069132271202315",
+            "deviceID": "101mi71ei0o4400",
+            "deviceType": "newBoiler2025",
+            "attr": "mediumPressure"
+        },
+        "新电锅炉2025-unitLoad": {
+            "key": "1966069132271202316",
+            "deviceID": "101mi71ei0o4400",
+            "deviceType": "newBoiler2025",
+            "attr": "unitLoad"
+        },
+        "新电锅炉2025-controlTarget": {
+            "key": "1966069132271202317",
+            "deviceID": "101mi71ei0o4400",
+            "deviceType": "newBoiler2025",
+            "attr": "controlTarget"
+        },
+        "新电锅炉2025-communicationStatus": {
+            "key": "1966069132271202318",
+            "deviceID": "101mi71ei0o4400",
+            "deviceType": "newBoiler2025",
+            "attr": "communicationStatus"
+        },
+        "新电锅炉2025-overpressureSignal": {
+            "key": "1966069132271202319",
+            "deviceID": "101mi71ei0o4400",
+            "deviceType": "newBoiler2025",
+            "attr": "overpressureSignal"
+        },
+        "新电锅炉2025-overtemperatureSignal": {
+            "key": "1966069132271202320",
+            "deviceID": "101mi71ei0o4400",
+            "deviceType": "newBoiler2025",
+            "attr": "overtemperatureSignal"
+        },
+        "新电锅炉2025-remoteControlSignalFeedback": {
+            "key": "1966069132271202321",
+            "deviceID": "101mi71ei0o4400",
+            "deviceType": "newBoiler2025",
+            "attr": "remoteControlSignalFeedback"
+        },
+        "新电锅炉2025-powerOnStatusFeedback": {
+            "key": "1966069132271202322",
+            "deviceID": "101mi71ei0o4400",
+            "deviceType": "newBoiler2025",
+            "attr": "powerOnStatusFeedback"
+        },
+        "新电锅炉2025-faultOutputFeedback": {
+            "key": "1966069132271202323",
+            "deviceID": "101mi71ei0o4400",
+            "deviceType": "newBoiler2025",
+            "attr": "faultOutputFeedback"
+        },
+        "新电锅炉2025-systemFeedback": {
+            "key": "1966069132271202324",
+            "deviceID": "101mi71ei0o4400",
+            "deviceType": "newBoiler2025",
+            "attr": "systemFeedback"
         }
     }
 }
