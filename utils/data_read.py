@@ -69,12 +69,12 @@ def _print_series(series_by_key, query_keys):
                 print(f"    {dt.strftime('%Y-%m-%d %H:%M:%S')} -> {val}")
 
 
-def build_single_param_payload(query_keys, *, config_path=None):
-    """用外部配置文件中的 single 规格组装 querySingleParam 需要的 payload.
+def build_single_param_payload(query_keys, *, specs_path=None):
+    """用 database/ 中的 single 规格组装 querySingleParam 需要的 payload.
 
     参数:
         query_keys: list[str], 你想查询的条目索引列表.
-        config_path: 可选, 查询规格 JSON 文件路径.
+        specs_path: 可选, 查询规格文件路径 (默认: database/query_specs.json).
 
     返回:
         list[dict], 可直接传给 requests.post(..., json=payload)
@@ -83,7 +83,7 @@ def build_single_param_payload(query_keys, *, config_path=None):
     if not isinstance(query_keys, (list, tuple)) or not query_keys:
         raise ValueError("query_keys 必须是非空 list/tuple, 例如 ['device_001']")
 
-    single_specs = get_single_specs(config_path)
+    single_specs = get_single_specs(specs_path)
 
     payload_items = []
     missing = []
@@ -168,14 +168,14 @@ def query_single_param(payload_items, *, query_keys=None, timeout=10, verbose=Tr
     return result_df
 
 
-def build_time_series_payload(query_keys, *, series_options, config_path=None):
-    """组装 queryTimeSeriesParam payload: 映射字段来自 query_specs, 参数来自 series_options."""
+def build_time_series_payload(query_keys, *, series_options, specs_path=None):
+    """组装 queryTimeSeriesParam payload: 映射字段来自 database/query_specs, 参数来自 series_options."""
 
     if not isinstance(query_keys, (list, tuple)) or not query_keys:
         raise ValueError("query_keys 必须是非空 list/tuple, 例如 ['device_001']")
 
     normalized_options = normalize_series_options(series_options)
-    time_series_specs = get_time_series_specs(config_path)
+    time_series_specs = get_time_series_specs(specs_path)
 
     payload_items = []
     missing = []
