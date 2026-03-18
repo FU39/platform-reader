@@ -3,6 +3,7 @@ from dataclasses import dataclass, fields
 from enum import Enum
 from functools import lru_cache
 from pathlib import Path
+from datetime import datetime
 
 import requests
 
@@ -14,7 +15,7 @@ SINGLE_PARAM_ENDPOINT = "/admin-api/de/querySingleParam"
 TIME_SERIES_ENDPOINT = "/admin-api/de/queryTimeSeriesParam"
 
 # 默认查询规格文件路径
-PROJECT_DIR = Path(__file__).resolve().parent
+PROJECT_DIR = Path(__file__).resolve().parents[1]
 CONFIG_DIR = PROJECT_DIR / "config"
 RESULT_DIR = PROJECT_DIR / "result"
 DEFAULT_QUERY_SPECS_PATH = CONFIG_DIR / "query_specs.json"
@@ -47,17 +48,20 @@ class QueryTimeSeriesSpec:
     deviceID: str
     deviceType: str
     attr: str
-    startTime: int  # Unix timestamp in milliseconds
-    endTime: int  # Unix timestamp in milliseconds
-    downSample: DownSampleMethod = DownSampleMethod.AVG
-    interval: str = '3600'  # 默认 1 小时 (3600 秒)
-    intervalPeriod: str = 's'  # e.g., "s" for seconds, "m" for minutes, "h" for hours
-    groupBy: bool = True
-    removeOutliers: bool = False  # 可选参数, 是否去除异常值
 
 
-# 统一从数据模型推导字段, 避免在调用侧重复硬编码
-TIME_SERIES_PAYLOAD_FIELDS = tuple(field.name for field in fields(QueryTimeSeriesSpec))
+TIME_SERIES_OPTION_FIELDS = (
+    "startTime",
+    "endTime",
+    "downSample",
+    "interval",
+    "intervalPeriod",
+    "groupBy",
+    "removeOutliers",
+)
+
+# queryTimeSeriesParam 的完整 payload 字段 = 映射字段 + 运行时选项字段
+TIME_SERIES_PAYLOAD_FIELDS = tuple(field.name for field in fields(QueryTimeSeriesSpec)) + TIME_SERIES_OPTION_FIELDS
 
 
 def _parse_downsample(value, *, alias):
@@ -116,6 +120,37 @@ def _parse_single_specs(raw_specs):
     return specs
 
 
+def normalize_series_options(raw_options):
+    """归一化 data_name.json 中的 series_options."""
+    if not isinstance(raw_options, dict):
+        raise ValueError("data_name.json 中 series_options 必须是对象 (dict)")
+
+    required = ["startTime", "endTime"]
+    missing = [field for field in required if field not in raw_options]
+    if missing:
+        raise ValueError(f"series_options 缺少字段: {missing}")
+
+    start_time = int(raw_options["startTime"])
+    end_time = int(raw_options["endTime"])
+    if start_time >= end_time:
+        raise ValueError("series_options 时间范围错误: startTime 必须小于 endTime")
+
+    downsample = _parse_downsample(raw_options.get("downSample", "AVG"), alias="series_options")
+
+    return {
+        "startTime": start_time,
+        "endTime": end_time,
+        "downSample": downsample.value,
+        "interval": str(raw_options.get("interval", "3600")),
+        "intervalPeriod": str(raw_options.get("intervalPeriod", "s")),
+        "groupBy": _parse_bool(raw_options.get("groupBy", True), field_name="series_options.groupBy"),
+        "removeOutliers": _parse_bool(
+            raw_options.get("removeOutliers", False),
+            field_name="series_options.removeOutliers",
+        ),
+    }
+
+
 def _parse_time_series_specs(raw_specs):
     if not isinstance(raw_specs, dict):
         raise ValueError("配置文件中的 time_series 必须是对象(dict)")
@@ -125,33 +160,16 @@ def _parse_time_series_specs(raw_specs):
         if not isinstance(item, dict):
             raise ValueError(f"time_series.{alias} 必须是对象(dict)")
 
-        required = ["key", "deviceID", "deviceType", "attr", "startTime", "endTime"]
+        required = ["key", "deviceID", "deviceType", "attr"]
         missing = [field for field in required if field not in item]
         if missing:
             raise ValueError(f"time_series.{alias} 缺少字段: {missing}")
-
-        start_time = int(item["startTime"])
-        end_time = int(item["endTime"])
-        if start_time >= end_time:
-            raise ValueError(f"time_series.{alias} 时间范围错误: startTime 必须小于 endTime")
-
-        downsample = _parse_downsample(item.get("downSample", "AVG"), alias=alias)
 
         specs[alias] = QueryTimeSeriesSpec(
             key=str(item["key"]),
             deviceID=str(item["deviceID"]),
             deviceType=str(item["deviceType"]),
             attr=str(item["attr"]),
-            startTime=start_time,
-            endTime=end_time,
-            downSample=downsample,
-            interval=str(item.get("interval", "3600")),
-            intervalPeriod=str(item.get("intervalPeriod", "s")),
-            groupBy=_parse_bool(item.get("groupBy", True), field_name=f"time_series.{alias}.groupBy"),
-            removeOutliers=_parse_bool(
-                item.get("removeOutliers", False),
-                field_name=f"time_series.{alias}.removeOutliers"
-            ),
         )
 
     return specs
@@ -194,6 +212,20 @@ def get_time_series_specs(config_path=None):
 def clear_query_specs_cache():
     """重新读取配置前可调用, 清除 load_query_specs 的缓存."""
     load_query_specs.cache_clear()
+
+
+def transfer_timestamp(timestamp_text, *, fmt="%Y-%m-%d %H:%M:%S"):
+    """将格式化时间字符串转换为毫秒时间戳."""
+    if not isinstance(timestamp_text, str) or not timestamp_text.strip():
+        raise ValueError(f"时间不能为空, 请输入格式为 {fmt} 的时间")
+
+    text = timestamp_text.strip()
+    try:
+        dt = datetime.strptime(text, fmt)
+    except ValueError as err:
+        raise ValueError(f"时间格式错误: {text}, 期望格式: {fmt}") from err
+
+    return int(dt.timestamp() * 1000)
 
 
 def check_connectivity():

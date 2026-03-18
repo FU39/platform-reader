@@ -1,5 +1,33 @@
 {
-  "query_keys": [
-    "新电锅炉2025-supplyTemperature"
-  ]
+    "series_options": {
+        "startTime": 1773504000000,
+        "endTime": 1773518400000,
+        "downSample": "AVG",
+        "interval": "3600",
+        "intervalPeriod": "s",
+        "groupBy": true,
+        "removeOutliers": false
+    },
+    "query_keys": [
+        {
+            "name": "新电锅炉2025-supplyTemperature",
+            "type": "time_series"
+        },
+        {
+            "name": "test_001",
+            "type": "time_series"
+        },
+        {
+            "name": "test_002",
+            "type": "time_series"
+        },
+        {
+            "name": "test_001",
+            "type": "single"
+        },
+        {
+            "name": "test_002",
+            "type": "single"
+        }
+    ]
 }

@@ -8,8 +8,8 @@
 import json
 import requests
 
-from utils import check_connectivity
-from data_read import query_single_param, query_time_series_param
+from utils.misc import check_connectivity
+from utils.data_read import query_single_param, query_time_series_param
 
 
 def test_single_param():
