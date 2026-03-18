@@ -7,15 +7,15 @@ from utils.misc import CONFIG_DIR, normalize_series_options, transfer_timestamp
 TIME_INPUT_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 
-def _load_data_name(path):
+def _load_config(path):
     if not path.exists():
-        raise FileNotFoundError(f"未找到 data_name.json: {path}")
+        raise FileNotFoundError(f"未找到 config.json: {path}")
 
     with path.open("r", encoding="utf-8") as file_obj:
         data = json.load(file_obj)
 
     if not isinstance(data, dict):
-        raise ValueError("data_name.json 根节点必须是对象 (dict)")
+        raise ValueError("config.json 根节点必须是对象 (dict)")
 
     return data
 
@@ -29,7 +29,7 @@ def _build_series_options(start_ms, end_ms, existing_options):
     if existing_options is None:
         existing_options = {}
     if not isinstance(existing_options, dict):
-        raise ValueError("data_name.json 中 series_options 必须是对象(dict)")
+        raise ValueError("config.json 中 series_options 必须是对象(dict)")
 
     merged = dict(existing_options)
     merged["startTime"] = start_ms
@@ -41,24 +41,24 @@ def _build_series_options(start_ms, end_ms, existing_options):
 
 def _parse_args():
     parser = argparse.ArgumentParser(
-        description="读取用户输入时间并转换为 data_name.json 所需毫秒时间戳"
+        description="读取用户输入时间并转换为 config.json 所需毫秒时间戳"
     )
     parser.add_argument(
-        "--data-name-path",
-        default=str(CONFIG_DIR / "data_name.json"),
-        help="data_name.json 路径，默认: config/data_name.json",
+        "--config-path",
+        default=str(CONFIG_DIR / "config.json"),
+        help="config.json 路径，默认: config/config.json",
     )
     parser.add_argument(
         "--print-only",
         action="store_true",
-        help="仅打印转换结果，不写回 data_name.json",
+        help="仅打印转换结果，不写回 config.json",
     )
     return parser.parse_args()
 
 
 def main():
     args = _parse_args()
-    data_name_path = Path(args.data_name_path)
+    config_path = Path(args.config_path)
 
     start_text = _prompt_time("开始时间")
     end_text = _prompt_time("结束时间")
@@ -76,17 +76,17 @@ def main():
     if args.print_only:
         return
 
-    data = _load_data_name(data_name_path)
+    data = _load_config(config_path)
     data["series_options"] = _build_series_options(
         start_ms,
         end_ms,
         data.get("series_options"),
     )
 
-    with data_name_path.open("w", encoding="utf-8") as file_obj:
+    with config_path.open("w", encoding="utf-8") as file_obj:
         json.dump(data, file_obj, ensure_ascii=False, indent=4)
 
-    print(f"\n已写入: {data_name_path}")
+    print(f"\n已写入: {config_path}")
 
 
 if __name__ == "__main__":

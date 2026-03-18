@@ -13,19 +13,19 @@ from utils.data_read import (
 
 
 def _load_main_input():
-    data_name_path = CONFIG_DIR / "data_name.json"
-    if not data_name_path.exists():
-        raise FileNotFoundError(f"未找到主函数输入文件: {data_name_path}")
+    config_path = CONFIG_DIR / "config.json"
+    if not config_path.exists():
+        raise FileNotFoundError(f"未找到主函数输入文件: {config_path}")
 
-    with data_name_path.open("r", encoding="utf-8") as file_obj:
+    with config_path.open("r", encoding="utf-8") as file_obj:
         data = json.load(file_obj)
 
     if not isinstance(data, dict):
-        raise ValueError("data_name.json 根节点必须是对象(dict)")
+        raise ValueError("config.json 根节点必须是对象 (dict)")
 
     query_keys = data.get("query_keys")
     if not isinstance(query_keys, list) or not query_keys:
-        raise ValueError("data_name.json 中 query_keys 必须是非空数组")
+        raise ValueError("config.json 中 query_keys 必须是非空数组")
 
     grouped_names = defaultdict(list)
     for idx, item in enumerate(query_keys, start=1):
@@ -43,7 +43,7 @@ def _load_main_input():
 
     series_options = data.get("series_options")
     if grouped_names.get("time_series") and not isinstance(series_options, dict):
-        raise ValueError("当 query_keys 包含 time_series 时, data_name.json 必须提供对象类型的 series_options")
+        raise ValueError("当 query_keys 包含 time_series 时, config.json 必须提供对象类型的 series_options")
 
     return grouped_names, (series_options or {})
 

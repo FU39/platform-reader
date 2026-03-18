@@ -17,8 +17,9 @@ TIME_SERIES_ENDPOINT = "/admin-api/de/queryTimeSeriesParam"
 # 默认查询规格文件路径
 PROJECT_DIR = Path(__file__).resolve().parents[1]
 CONFIG_DIR = PROJECT_DIR / "config"
+DATABASE_DIR = PROJECT_DIR / "database"
 RESULT_DIR = PROJECT_DIR / "result"
-DEFAULT_QUERY_SPECS_PATH = CONFIG_DIR / "query_specs.json"
+DEFAULT_QUERY_SPECS_PATH = DATABASE_DIR / "query_specs.json"
 
 
 class DownSampleMethod(Enum):
@@ -121,9 +122,9 @@ def _parse_single_specs(raw_specs):
 
 
 def normalize_series_options(raw_options):
-    """归一化 data_name.json 中的 series_options."""
+    """归一化 config.json 中的 series_options."""
     if not isinstance(raw_options, dict):
-        raise ValueError("data_name.json 中 series_options 必须是对象 (dict)")
+        raise ValueError("config.json 中 series_options 必须是对象 (dict)")
 
     required = ["startTime", "endTime"]
     missing = [field for field in required if field not in raw_options]
@@ -176,17 +177,17 @@ def _parse_time_series_specs(raw_specs):
 
 
 @lru_cache(maxsize=8)
-def load_query_specs(config_path=None):
-    """从外部 JSON 文件加载 single/time_series 查询规格.
+def load_query_specs(specs_path=None):
+    """从 database/ 目录加载 single/time_series 查询规格.
 
     参数:
-        config_path: 可选, 自定义配置文件路径; 不传时使用 DEFAULT_QUERY_SPECS_PATH.
+        specs_path: 可选, 自定义查询规格文件路径; 不传时使用 DEFAULT_QUERY_SPECS_PATH (database/query_specs.json).
 
     返回:
         tuple[dict[str, QuerySingleSpec], dict[str, QueryTimeSeriesSpec]]
     """
 
-    path = Path(config_path) if config_path else DEFAULT_QUERY_SPECS_PATH
+    path = Path(specs_path) if specs_path else DEFAULT_QUERY_SPECS_PATH
     if not path.exists():
         raise FileNotFoundError(f"查询规格文件不存在: {path}")
 
@@ -201,12 +202,12 @@ def load_query_specs(config_path=None):
     return single_specs, time_series_specs
 
 
-def get_single_specs(config_path=None):
-    return load_query_specs(config_path)[0]
+def get_single_specs(specs_path=None):
+    return load_query_specs(specs_path)[0]
 
 
-def get_time_series_specs(config_path=None):
-    return load_query_specs(config_path)[1]
+def get_time_series_specs(specs_path=None):
+    return load_query_specs(specs_path)[1]
 
 
 def clear_query_specs_cache():
