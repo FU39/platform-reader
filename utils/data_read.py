@@ -4,8 +4,13 @@ import pandas as pd
 from datetime import datetime
 from dataclasses import asdict
 
-from utils import BASE_URL, SINGLE_PARAM_ENDPOINT, TIME_SERIES_ENDPOINT
-from utils import TIME_SERIES_PAYLOAD_FIELDS, get_single_specs, get_time_series_specs
+from utils.misc import BASE_URL, SINGLE_PARAM_ENDPOINT, TIME_SERIES_ENDPOINT
+from utils.misc import (
+    TIME_SERIES_PAYLOAD_FIELDS,
+    get_single_specs,
+    get_time_series_specs,
+    normalize_series_options,
+)
 
 
 def _to_datetime(ts):
@@ -19,22 +24,36 @@ def _to_datetime(ts):
 
 
 def _build_paired_df(series_by_key, query_keys):
-    """每个 query_key 输出两列: <key>_timestamp 和 <key>."""
-    frames = []
+    """构建单 timestamp 列 + 多值列的结果表."""
+    if not query_keys:
+        return pd.DataFrame()
+
+    merged_df = None
     for key in query_keys:
         rows = series_by_key.get(key, [])
         records = []
         for ts, val in rows:
             dt = _to_datetime(ts)
             if dt is not None:
-                records.append({f"{key}_timestamp": dt, key: val})
+                records.append({"timestamp": dt, key: val})
 
-        frames.append(pd.DataFrame(records, columns=[f"{key}_timestamp", key]))
+        key_df = pd.DataFrame(records)
+        if key_df.empty:
+            key_df = pd.DataFrame(columns=["timestamp", key])
+        else:
+            key_df = key_df.groupby("timestamp", as_index=False).last()
 
-    if not frames:
-        return pd.DataFrame()
+        if merged_df is None:
+            merged_df = key_df
+        else:
+            merged_df = pd.merge(merged_df, key_df, on="timestamp", how="outer")
 
-    return pd.concat(frames, axis=1)
+    if merged_df is None:
+        return pd.DataFrame(columns=["timestamp", *query_keys])
+
+    merged_df = merged_df.sort_values("timestamp").reset_index(drop=True)
+    expected_cols = ["timestamp", *query_keys]
+    return merged_df.reindex(columns=expected_cols)
 
 
 def _print_series(series_by_key, query_keys):
@@ -79,7 +98,7 @@ def build_single_param_payload(query_keys, *, config_path=None):
     if missing:
         msg = (
             "single 配置缺失, 无法组装 payload. 请检查 query_specs.json.\n"
-            f"缺失条目: {json.dumps(missing, ensure_ascii=False, indent=2)}"
+            f"缺失条目: {json.dumps(missing, ensure_ascii=False, indent=4)}"
         )
         raise KeyError(msg)
 
@@ -117,7 +136,7 @@ def query_single_param(payload_items, *, query_keys=None, timeout=10, verbose=Tr
 
     print(f"请求 URL: {url}")
     print(f"查询条目数: {len(payload_items)}")
-    print(f"请求数据: {json.dumps(payload_items, ensure_ascii=False, indent=2)}")
+    print(f"请求数据: {json.dumps(payload_items, ensure_ascii=False, indent=4)}")
 
     response = requests.post(url, json=payload_items, timeout=timeout)
     print(f"\n状态码: {response.status_code}")
@@ -125,7 +144,7 @@ def query_single_param(payload_items, *, query_keys=None, timeout=10, verbose=Tr
 
     response_data = response.json()
     print("\n响应结果:")
-    print(json.dumps(response_data, ensure_ascii=False, indent=2))
+    print(json.dumps(response_data, ensure_ascii=False, indent=4))
 
     if response_data.get("code") != 0:
         print(f"✗ 错误信息: {response_data.get('msg')}")
@@ -149,20 +168,13 @@ def query_single_param(payload_items, *, query_keys=None, timeout=10, verbose=Tr
     return result_df
 
 
-def build_time_series_payload(query_keys, *, config_path=None):
-    """用外部配置文件中的 time_series 规格组装 queryTimeSeriesParam 需要的 payload.
-
-    参数:
-        query_keys: list[str], 你想查询的条目索引列表.
-        config_path: 可选, 查询规格 JSON 文件路径.
-
-    返回:
-        list[dict], 可直接传给 requests.post(..., json=payload)
-    """
+def build_time_series_payload(query_keys, *, series_options, config_path=None):
+    """组装 queryTimeSeriesParam payload: 映射字段来自 query_specs, 参数来自 series_options."""
 
     if not isinstance(query_keys, (list, tuple)) or not query_keys:
         raise ValueError("query_keys 必须是非空 list/tuple, 例如 ['device_001']")
 
+    normalized_options = normalize_series_options(series_options)
     time_series_specs = get_time_series_specs(config_path)
 
     payload_items = []
@@ -174,14 +186,13 @@ def build_time_series_payload(query_keys, *, config_path=None):
             continue
 
         item = asdict(spec)
-        if hasattr(item.get("downSample"), "value"):
-            item["downSample"] = item["downSample"].value
+        item.update(normalized_options)
         payload_items.append(item)
 
     if missing:
         msg = (
             "time_series 配置缺失, 无法组装 payload. 请检查 query_specs.json.\n"
-            f"缺失条目: {json.dumps(missing, ensure_ascii=False, indent=2)}"
+            f"缺失条目: {json.dumps(missing, ensure_ascii=False, indent=4)}"
         )
         raise KeyError(msg)
 
@@ -244,7 +255,7 @@ def query_time_series_param(payload_items, *, query_keys=None, timeout=10, verbo
 
     print(f"请求 URL: {url}")
     print(f"查询条目数: {len(normalized_payload)}")
-    print(f"请求数据: {json.dumps(normalized_payload, ensure_ascii=False, indent=2)}")
+    print(f"请求数据: {json.dumps(normalized_payload, ensure_ascii=False, indent=4)}")
 
     response = requests.post(url, json=normalized_payload, timeout=timeout)
     print(f"\n状态码: {response.status_code}")
@@ -252,7 +263,7 @@ def query_time_series_param(payload_items, *, query_keys=None, timeout=10, verbo
 
     response_data = response.json()
     print("\n响应结果:")
-    print(json.dumps(response_data, ensure_ascii=False, indent=2))
+    print(json.dumps(response_data, ensure_ascii=False, indent=4))
 
     if response_data.get("code") != 0:
         print(f"✗ 错误信息: {response_data.get('msg')}")

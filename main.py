@@ -1,9 +1,15 @@
+from collections import defaultdict
 from datetime import datetime
 import json
 import requests
 
-from utils import BASE_URL, CONFIG_DIR, RESULT_DIR, check_connectivity
-from data_read import build_time_series_payload, query_time_series_param
+from utils.misc import BASE_URL, CONFIG_DIR, RESULT_DIR, check_connectivity
+from utils.data_read import (
+    build_single_param_payload,
+    build_time_series_payload,
+    query_single_param,
+    query_time_series_param,
+)
 
 
 def _load_main_input():
@@ -21,11 +27,25 @@ def _load_main_input():
     if not isinstance(query_keys, list) or not query_keys:
         raise ValueError("data_name.json 中 query_keys 必须是非空数组")
 
-    query_keys = [str(item).strip() for item in query_keys if str(item).strip()]
-    if not query_keys:
-        raise ValueError("data_name.json 中 query_keys 不能为空")
+    grouped_names = defaultdict(list)
+    for idx, item in enumerate(query_keys, start=1):
+        if not isinstance(item, dict):
+            raise ValueError(f"query_keys 第 {idx} 项必须是对象, 例如 {{'name': 'x', 'type': 'time_series'}}")
 
-    return query_keys
+        name = str(item.get("name", "")).strip()
+        query_type = str(item.get("type", "")).strip().lower()
+        if not name:
+            raise ValueError(f"query_keys 第 {idx} 项缺少 name")
+        if query_type not in {"single", "time_series"}:
+            raise ValueError(f"query_keys 第 {idx} 项 type 非法: {query_type}, 仅支持 single/time_series")
+
+        grouped_names[query_type].append(name)
+
+    series_options = data.get("series_options")
+    if grouped_names.get("time_series") and not isinstance(series_options, dict):
+        raise ValueError("当 query_keys 包含 time_series 时, data_name.json 必须提供对象类型的 series_options")
+
+    return grouped_names, (series_options or {})
 
 
 if __name__ == "__main__":
@@ -33,23 +53,29 @@ if __name__ == "__main__":
     print(f"服务器地址: {BASE_URL}")
     print(f"读取时间: {current_time}")
 
-    query_keys = _load_main_input()
-
-    result_name = f"series_result_{current_time}.csv"
-    result_path = RESULT_DIR / result_name
+    grouped_names, series_options = _load_main_input()
 
     RESULT_DIR.mkdir(parents=True, exist_ok=True)
-    if result_path.parent:
-        result_path.parent.mkdir(parents=True, exist_ok=True)
 
     if not check_connectivity():
         raise ConnectionError("\n无法连接到服务器, 请检查网络和服务器状态")
 
     try:
-        payload = build_time_series_payload(query_keys)
-        result_df = query_time_series_param(payload, query_keys=query_keys, timeout=10, verbose=True)
-        result_df.to_csv(result_path, index=False)
-        print(f"\n✓ 已保存结果到: {result_path}")
+        time_series_keys = grouped_names.get("time_series", [])
+        if time_series_keys:
+            series_payload = build_time_series_payload(time_series_keys, series_options=series_options)
+            series_df = query_time_series_param(series_payload, query_keys=time_series_keys, timeout=10, verbose=True)
+            series_result_path = RESULT_DIR / f"series_result_{current_time}.csv"
+            series_df.to_csv(series_result_path, index=False)
+            print(f"\n✓ 已保存时序结果到: {series_result_path}")
+
+        single_keys = grouped_names.get("single", [])
+        if single_keys:
+            single_payload = build_single_param_payload(single_keys)
+            single_df = query_single_param(single_payload, query_keys=single_keys, timeout=10, verbose=True)
+            single_result_path = RESULT_DIR / f"single_result_{current_time}.csv"
+            single_df.to_csv(single_result_path, index=False)
+            print(f"\n✓ 已保存单点结果到: {single_result_path}")
 
     except requests.exceptions.RequestException as e:
         print(f"✗ 请求异常: {str(e)}")

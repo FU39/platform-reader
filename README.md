@@ -1,154 +1,120 @@
 # 平台数据读取工具说明
 
-本项目用于调用平台两个接口并导出结果：
+本项目用于调用平台接口并导出结果，当前主流程由 `main.py` 驱动：
 
-- `querySingleParam`：读取点位当前值
-- `queryTimeSeriesParam`：读取点位时序数据
+- 从 `config/data_name.json` 读取本次要查询的 `query_keys`
+- 从 `config/query_specs.json` 读取团队维护的字段映射
+- 按 `type` 分组调用接口（`single` / `time_series`）
+- 分别导出到 `result/` 目录
 
-当前主流程由 `main.py` 驱动，读取 `config/data_name.json` 中的 `query_keys`，然后调用时序接口并把结果写入 `result/` 目录。
-
-## 目录结构
+## 项目结构
 
 ```text
-code/
+platform-reader/
 ├─ config/
-│  ├─ data_name.json        # 主函数输入配置（本次运行要查哪些 key）
-│  └─ query_specs.json      # 查询规格库（团队维护的点位字典）
-├─ result/                  # 导出的 CSV 结果目录
-├─ data_read.py             # payload 构造 + 接口请求 + 结果 DataFrame
-├─ main.py                  # 主入口：读取 data_name.json 并导出 CSV
-├─ test_data_read.py        # 手工测试脚本（示例 payload）
-├─ utils.py                 # 常量、数据模型、配置加载与校验
+│  ├─ data_name.json          # 本次运行输入：query_keys + series_options
+│  └─ query_specs.json        # 查询规格库：single/time_series 字段映射
+├─ result/
+├─ utils/
+│  ├─ __init__.py
+│  ├─ data_read.py            # payload 构造、接口请求、DataFrame 组装
+│  └─ misc.py                 # 常量、数据模型、配置加载与参数归一化
+├─ main.py                    # 主入口，按 type 分组查询并分文件导出
+├─ timestamp_handler.py       # 交互输入时间并写入 data_name.json 的 startTime/endTime
+├─ test_data_read.py
 ├─ requirements.txt
 └─ README.md
 ```
 
-## 核心文件职责
+## 配置契约
 
-- `utils.py`
-  - 定义接口地址、配置路径（如 `CONFIG_DIR`、`RESULT_DIR`）
-  - 定义 `QuerySingleSpec` / `QueryTimeSeriesSpec`
-  - 负责读取并校验 `config/query_specs.json`
+### 1) `config/query_specs.json`
 
-- `data_read.py`
-  - `build_single_param_payload` / `build_time_series_payload`：按 `query_keys` 从规格库构造请求体
-  - `query_single_param` / `query_time_series_param`：发送请求并返回 `DataFrame`
-  - 结果列结构：每个 `query_key` 输出两列：`<key>_timestamp` 和 `<key>`
+只维护字段映射，不维护时序查询窗口参数。
 
-- `main.py`
-  - 从 `config/data_name.json` 读取本次运行的 `query_keys`
-  - 调用 `build_time_series_payload` + `query_time_series_param`
-  - 保存到 `result/series_result_<时间戳>.csv`
+- `single` 项下字段：`key`, `deviceID`, `deviceType`, `attr`
+- `time_series` 项下字段：`key`, `deviceID`, `deviceType`, `attr`
 
-## `query_specs.json` 维护
+### 2) `config/data_name.json`
 
-`config/query_specs.json` 是“查询规格库”，可以理解为项目内的点位字典。它把“业务别名 key”映射为接口真正需要的字段。
+用于定义本次运行输入：
 
-### 维护说明
+- `query_keys`：列表，每项是 `{ "name": "...", "type": "single|time_series" }`
+- `series_options`：时序查询参数（只对 `time_series` 生效）
 
-- 主流程和构造函数都依赖它来生成请求 payload
-- 新增/修改点位时，通常只需要改这里，不必改 Python 代码
-- 团队协作时，统一维护这份文件可以减少硬编码和口径不一致
-
-### 结构说明
-
-`query_specs.json` 包含两大块：
-
-- `single`：单点当前值查询规格
-- `time_series`：时序查询规格
-
-示例（节选）：
+示例：
 
 ```json
 {
-  "single": {
-    "test_001": {
-      "key": "日累计运行费用KKKKKK",
-      "deviceID": "101ijmk5rto4400",
-      "deviceType": "economic_evaluation",
-      "attr": "economic_evaluation"
+    "query_keys": [
+        {
+            "name": "新电锅炉2025-supplyTemperature",
+            "type": "time_series"
+        }
+    ],
+    "series_options": {
+        "startTime": 1773615890000,
+        "endTime": 1773626690000,
+        "downSample": "AVG",
+        "interval": "3600",
+        "intervalPeriod": "s",
+        "groupBy": true,
+        "removeOutliers": false
     }
-  },
-  "time_series": {
-    "新电锅炉2025-supplyTemperature": {
-      "key": "1966069132271202313",
-      "deviceID": "101mi71ei0o4400",
-      "deviceType": "newBoiler2025",
-      "attr": "supplyTemperature",
-      "startTime": 1773615890000,
-      "endTime": 1773626690000,
-      "downSample": "AVG",
-      "interval": "3600",
-      "intervalPeriod": "s",
-      "groupBy": true,
-      "removeOutliers": false
-    }
-  }
 }
 ```
 
-### 协作者维护建议
+## 结果输出
 
-- `time_series` 中每个条目至少保证：`key/deviceID/deviceType/attr/startTime/endTime`
-- `startTime`、`endTime` 使用毫秒时间戳，且 `startTime < endTime`
-- `downSample` 建议统一使用大写（如 `AVG`）
-- 新增 key 时，命名建议语义化，方便业务侧直接引用
+- `time_series` 查询结果：`result/series_result_<时间戳>.csv`
+- `single` 查询结果：`result/single_result_<时间戳>.csv`
 
-## 如何配置 `data_name.json`
+CSV 列结构统一为：
 
-`config/data_name.json` 用于指定“本次主函数运行要查哪些 key”。
+- 一列公共 `timestamp`
+- 后续每列为对应 `query_keys` 的 `name`
 
-当前 `main.py` 只读取一个字段：`query_keys`。
-
-### 最小可用配置
-
-```json
-{
-  "query_keys": [
-    "新电锅炉2025-supplyTemperature"
-  ]
-}
-```
-
-### 多 key 配置示例
-
-```json
-{
-  "query_keys": [
-    "test_001",
-    "test_002",
-    "新电锅炉2025-supplyTemperature"
-  ]
-}
-```
-
-> 注意：`query_keys` 里的每一项都必须在 `config/query_specs.json` 的 `time_series` 中存在。
-
-## 运行方式
+## 安装与运行
 
 ```powershell
+pip install -r .\requirements.txt
 python .\main.py
 ```
 
-运行成功后，会在 `result/` 下生成类似文件：
-
-- `series_result_20260319-153000.csv`
-
-## 输出结果说明
-
-导出的 CSV 按 key 成对输出列。例如配置了两个 key：`A`、`B`，列名会是：
-
-- `A_timestamp`, `A`, `B_timestamp`, `B`
-
-即：每个 key 对应一列时间戳和一列数值，便于各点位独立对齐和查看。
-
 ## 常见问题
 
-- 提示找不到 `data_name.json`
-  - 检查文件是否位于 `config/data_name.json`
+- `query_keys` 报错
+    - 检查每项是否都是对象，并且包含 `name` 和 `type`
 
-- 提示某个 key 缺失
-  - 检查该 key 是否已在 `config/query_specs.json` 的 `time_series` 下配置
+- `time_series` 报缺少参数
+    - 检查 `data_name.json` 是否提供了对象类型的 `series_options`
 
-- 提示时间范围错误
-  - 检查 `startTime`、`endTime` 的毫秒时间戳和先后关系
+- 查询 key 缺失
+    - 检查 `query_keys.name` 是否在 `query_specs.json` 对应类型下存在
+
+## 时间戳输入工具
+
+`timestamp_handler.py` 用于交互读取时间字符串并转换为毫秒时间戳，复用 `utils/misc.py` 中的 `transfer_timestamp()`。
+
+- 输入格式固定为：`YYYY-MM-DD HH:MM:SS`
+- 若输入格式不合法，直接抛出 `ValueError`
+- 若合法，会转换为 `series_options.startTime` 和 `series_options.endTime`
+- 默认会写回 `config/data_name.json`
+
+命令示例：
+
+```powershell
+python .\timestamp_handler.py
+```
+
+仅转换并打印，不写回文件：
+
+```powershell
+python .\timestamp_handler.py --print-only
+```
+
+自定义 `data_name.json` 路径：
+
+```powershell
+python .\timestamp_handler.py --data-name-path .\config\data_name.json
+```
