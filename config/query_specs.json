@@ -1,0 +1,51 @@
+{
+    "single": {
+        "test_001": {
+            "key": "日累计运行费用KKKKKK",
+            "deviceID": "101ijmk5rto4400",
+            "deviceType": "economic_evaluation",
+            "attr": "economic_evaluation"
+        }
+    },
+    "time_series": {
+        "test_001": {
+            "key": "1823627608543428609",
+            "deviceID": "101ijmk5rto4400",
+            "deviceType": "economic_evaluation",
+            "attr": "economic_evaluation",
+            "startTime": 1773615890000,
+            "endTime": 1773626690000,
+            "downSample": "AVG",
+            "interval": "3600",
+            "intervalPeriod": "s",
+            "groupBy": true,
+            "removeOutliers": false
+        },
+        "test_002": {
+            "key": "1823630282475143170",
+            "deviceID": "101ijmm2hq44400",
+            "deviceType": "economic_evaluation",
+            "attr": "economic_evaluation",
+            "startTime": 1773615890000,
+            "endTime": 1773626690000,
+            "downSample": "AVG",
+            "interval": "3600",
+            "intervalPeriod": "s",
+            "groupBy": true,
+            "removeOutliers": false
+        },
+        "新电锅炉2025-supplyTemperature": {
+            "key": "1966069132271202313",
+            "deviceID": "101mi71ei0o4400",
+            "deviceType": "newBoiler2025",
+            "attr": "supplyTemperature",
+            "startTime": 1773615890000,
+            "endTime": 1773626690000,
+            "downSample": "AVG",
+            "interval": "3600",
+            "intervalPeriod": "s",
+            "groupBy": true,
+            "removeOutliers": false
+        }
+    }
+}
